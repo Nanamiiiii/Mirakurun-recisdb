@@ -12,12 +12,12 @@ RUN apt-get update && \
     npm ci --omit=dev
 
 # Build & install recisdb
-WORKDIR /src
-RUN apt-get install -y --no-install-recommends git curl libclang-dev cmake libdvbv5-dev libpcsclite-dev libudev-dev pkg-config && \
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain stable -y
-RUN git clone --recursive https://github.com/kazuki0824/recisdb-rs.git && \
-    cd recisdb-rs && \
-    /root/.cargo/bin/cargo build -F dvb --release
+#WORKDIR /src
+#RUN apt-get install -y --no-install-recommends git curl libclang-dev cmake libdvbv5-dev libpcsclite-dev libudev-dev pkg-config && \
+#    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain stable -y
+#RUN git clone --recursive https://github.com/kazuki0824/recisdb-rs.git && \
+#    cd recisdb-rs && \
+#    /root/.cargo/bin/cargo build -F dvb --release
 
 # Build isdb-scanner
 FROM python:3.11-bookworm AS py-builder
@@ -50,12 +50,16 @@ RUN apt-get update && \
         libdvbv5-dev \
         pcsc-tools \
         dvb-tools \
+        wget \
         && \
+    wget https://github.com/kazuki0824/recisdb-rs/releases/download/1.2.4/recisdb_1.2.4-1_amd64.deb && \
+    apt install ./recisdb_1.2.4-1_amd64.deb && \
+    rm -f ./recisdb_1.2.4-1_amd64.deb && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app /app
-COPY --from=build /src/recisdb-rs/target/release/recisdb /usr/local/bin/
+#COPY --from=build /src/recisdb-rs/target/release/recisdb /usr/local/bin/
 COPY --from=py-builder /src/ISDBScanner/dist/isdb-scanner /usr/local/bin/
 CMD ["./docker/container-init.sh"]
 EXPOSE 40772 9229
