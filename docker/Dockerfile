@@ -76,6 +76,7 @@ RUN apt-get install -y --no-install-recommends git automake autoconf && \
     make && \
     make install
 
+WORKDIR /app
 RUN apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
