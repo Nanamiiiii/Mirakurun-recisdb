@@ -40,6 +40,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         ca-certificates \
         make \
+        cmake \
         gcc \
         g++ \
         pkg-config \
@@ -51,15 +52,36 @@ RUN apt-get update && \
         pcsc-tools \
         dvb-tools \
         wget \
+        git \
+        build-essential \
         && \
     wget https://github.com/kazuki0824/recisdb-rs/releases/download/1.2.4/recisdb_1.2.4-1_amd64.deb && \
     apt install ./recisdb_1.2.4-1_amd64.deb && \
-    rm -f ./recisdb_1.2.4-1_amd64.deb && \
-    apt-get clean && \
+    rm -f ./recisdb_1.2.4-1_amd64.deb
+
+# Build & install libaribb25, recpt1
+WORKDIR /src
+RUN apt-get install -y --no-install-recommends cmake libpcsclite1 libpcsclite-dev pkg-config && \
+    git clone https://github.com/tsukumijima/libaribb25.git && \
+    cd libaribb25 && \
+    cmake -B build && cd build && \
+    make && \
+    make install
+
+RUN apt-get install -y --no-install-recommends git automake autoconf && \
+    git clone https://github.com/stz2012/recpt1.git && \
+    cd recpt1/recpt1 && \
+    ./autogen.sh && \
+    ./configure --enable-b25 && \
+    make && \
+    make install
+
+RUN apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app /app
 #COPY --from=build /src/recisdb-rs/target/release/recisdb /usr/local/bin/
 COPY --from=py-builder /src/ISDBScanner/dist/isdb-scanner /usr/local/bin/
+RUN cd /src/libaribb25/build && make install
 CMD ["./docker/container-init.sh"]
 EXPOSE 40772 9229
